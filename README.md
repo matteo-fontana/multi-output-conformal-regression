@@ -1,4 +1,4 @@
-This is the repository associated with the paper [A Unified Comparative Study with Generalized Conformity Scores for Multi-Output Conformal Regression](https://arxiv.org/abs/2501.10533).
+This is the repository associated with the paper [A Unified Comparative Study with Generalized Conformity Scores for Multi-Output Conformal Regression](https://arxiv.org/abs/2501.10533) (ICML 2025).
 
 It includes:
 - An implementation of several conformal methods for multi-output conformal regression.
