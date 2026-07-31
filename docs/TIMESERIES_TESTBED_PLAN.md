@@ -546,3 +546,30 @@ told the right γ.
 
 Both checks assert their published *direction* rather than exact numbers, since the base
 predictors and splits differ from the originals.
+
+### A first finding from the cross-product
+
+The score axis immediately surfaces a confound that a score-fixed benchmark cannot see: **the
+OGD/PID learning rate has to be chosen per score family, not per dataset.**
+
+`RFKDE` on `ar1_garch`, α = 0.1, `PID` at three learning rates:
+
+| score | range | lr | coverage | width | grid-truncated |
+|---|---|---|---|---|---|
+| `hpd` | [0, 1] | 0.001 | 0.892 | 3.80 | 0% |
+| `hpd` | [0, 1] | 0.01 | 0.896 | 4.26 | 2.5% |
+| `hpd` | [0, 1] | 0.10 | 0.899 | 8.69 | 27.4% |
+| `abs_residual` | [0, 4.0] | 0.001 | 0.874 | 3.28 | 0% |
+| `abs_residual` | [0, 4.0] | 0.01 | 0.883 | 3.36 | 0% |
+| `abs_residual` | [0, 4.0] | 0.10 | 0.898 | 3.50 | 0% |
+
+`lr = 0.1` is the published default and is well-scaled for a residual score, whose range is set by
+the data. On a *bounded* score it is a step of 10% of the entire score domain, so the threshold
+routinely exceeds the score's own maximum, the prediction set becomes the whole line, and the mean
+width more than doubles — at a marginal coverage that still looks correct. Only the width and the
+`truncated_rate` diagnostic reveal it.
+
+Two consequences: the tuning grid now spans `lr ∈ [0.001, 0.5]` so the sweep can find the right
+scale per score, and `truncated_rate` earns its place in the metric table (guard 7 of §8 paying
+for itself). More generally this is the kind of result the study exists to produce — an
+interaction between the two axes that neither axis alone can expose.

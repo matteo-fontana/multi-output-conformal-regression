@@ -162,7 +162,12 @@ def _ts_posthoc_grid(scores, full=False):
     windows = [100, 500, 2000] if full else [500]
     rhos = [0.99, 0.995, 0.999] if full else [0.99]
     gammas = [0.001, 0.005, 0.01, 0.05] if full else [0.01]
-    lrs = [0.05, 0.1, 0.5] if full else [0.1]
+    # The learning rate has to span several orders of magnitude because the right value depends on
+    # the *score family*, not just the dataset: the OGD/PID defaults in the literature are
+    # calibrated to residual-scale scores, and applying them to a bounded score such as `hpd` or
+    # `pit` (range [0, 1]) drives the threshold past the score's own maximum and inflates the sets.
+    # A benchmark that fixes the score cannot see this; here it is a declared axis.
+    lrs = [0.001, 0.01, 0.05, 0.1, 0.5] if full else [0.01, 0.1]
 
     return Union(
         Join(HP(method='Split'), HP(score=scores)),
