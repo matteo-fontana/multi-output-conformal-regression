@@ -1,6 +1,10 @@
 # Plan: repurposing this framework as a testbed for univariate time-series conformal prediction
 
-Target: an empirical companion to a review paper on conformal prediction for time series.
+Target: an empirical companion to a review paper on conformal prediction for time series, taken as
+a successor to Stocker, Małgorzewicz, Fontana & Ben Taieb, *A Gentle Introduction to Conformal Time
+Series Forecasting* (arXiv 2511.13608). Its taxonomy, notation and validity–efficiency–compute
+framing are treated as fixed inputs here rather than choices to be re-made; see §7.1 of the
+companion survey.
 
 Companion document: **`TIMESERIES_METHODS_AND_DATASETS.md`** — survey of the method families, the
 datasets each paper benchmarks on (verified against the authors' released code), the proposed
@@ -262,25 +266,42 @@ connected components, a genuinely new descriptive statistic for a review.
 
 ### 4.2 Metric list
 
+Grouped under the **validity / efficiency / compute** triad used in *A Gentle Introduction to
+Conformal Time Series Forecasting*, so the results tables compose with that paper's rather than
+competing with them.
+
+**Validity**
+
 - **Marginal coverage** and its deviation from `1 − α`.
 - **Rolling / local coverage**: mean coverage in sliding windows of width `W ∈ {50, 100, 250}`;
   report RMS deviation ("LCE") and worst-window deviation.
-- **Set size**: mean, median, geometric mean (reuse the existing log-size plumbing), plus number
-  of components.
-- **Winkler / interval score** and **pinball loss** at `α/2, 1 − α/2` — proper scoring, ties the
-  study to the forecasting literature.
 - **Miscoverage clustering**: longest run of consecutive misses, run-length distribution, and a
   runs test / Ljung–Box on the miscoverage indicator sequence. Independence of the error sequence
-  is the property split CP loses first, and almost nobody reports it.
-- **Adaptivity**: Spearman correlation between width `t` and `|residual_t|` (or oracle conditional
-  σ_t where available).
+  is the property split CP loses first, and it is the metric most directly tied to the
+  weak-dependence conditions in the prior review's theory section.
 - **Conditional coverage**: `wsc_unbiased` on lag features (reuse as-is); coverage stratified by
   volatility decile and by regime label; and on synthetic data the **exact** conditional-coverage
   error against the oracle law.
-- **Regret** vs. the best fixed threshold in hindsight, and strongly-adaptive regret over intervals
-  — the natural yardstick for the online-learning methods.
 - **Shift response**: coverage in windows before/at/after each known changepoint, and recovery time
   (steps until rolling coverage re-enters a band around `1 − α`).
+- **Dependence diagnostics** (new, and the bridge to the theory): estimated mixing / weak-dependence
+  coefficients per dataset, and the realised coverage loss plotted against the bound they imply.
+  On the synthetic group these are known by construction, so the bound's tightness is measurable
+  rather than merely assertable — see §7.2 of the survey.
+
+**Efficiency**
+
+- **Set size**: mean, median, geometric mean (reuse the existing log-size plumbing), plus number
+  of connected components.
+- **Winkler / interval score** and **pinball loss** at `α/2, 1 − α/2` — proper scoring, ties the
+  study to the forecasting literature.
+- **Adaptivity**: Spearman correlation between width `t` and `|residual_t|` (or oracle conditional
+  σ_t where available).
+- **Regret** vs. the best fixed threshold in hindsight, and strongly-adaptive regret over intervals
+  — the natural yardstick for the online-learning methods.
+
+**Compute**
+
 - **Cost**: keep `score_time` / `test_coverage_time` / `total_time`, and add
   `update_time_per_step`, which is what actually matters for deployment.
 

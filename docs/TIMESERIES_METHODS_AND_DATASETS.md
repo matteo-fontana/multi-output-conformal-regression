@@ -22,6 +22,15 @@ Six families. The axis that matters for the testbed is *what the method adapts* 
 the score, the calibration set, or the threshold — because that determines where it plugs into the
 architecture in §3 of the plan.
 
+**Alignment with Stocker, Małgorzewicz, Fontana & Ben Taieb (2025).** The three-way split used in
+*A Gentle Introduction to Conformal Time Series Forecasting* maps onto the families below as:
+*reweighting calibration data* → **F2**; *dynamically updating residual distributions* → **F4**
+and **F5**; *adaptively tuning target coverage in real time* → **F3**. The refinement here is to
+separate F4 from F5 (reusing training data via resampling is a different mechanism from modelling
+the residual process) and to add F1 as an explicit control and F6 as the horizon axis. Keep the
+prior review's terminology in the paper; the finer split is an implementation convenience, not a
+competing taxonomy.
+
 ### F1. Static split CP applied naively (the control)
 
 Split conformal with a single `q` from a held-out calibration block. Included as the baseline that
@@ -255,38 +264,68 @@ metrics, and horizon 1 by default with 24 reserved for the M4/NN5 group.
 
 ---
 
-## 7. Positioning against existing reviews and benchmarks
+## 7. Positioning: continuity with the prior review, and the one competing benchmark
 
-Two recent works overlap with the intended contribution and should be read before scoping:
+### 7.1 The predecessor is the authors' own
 
-- **"A Gentle Introduction to Conformal Time Series Forecasting"** (arXiv 2511.13608, Nov 2025) — a
-  review organised around reweighting calibration data / updating residual distributions /
-  adaptively tuning target coverage, with a simulation study on coverage, width and cost. Its
-  taxonomy is close to F2/F5/F3 above. **[web]**
-- **"Conformal Prediction Algorithms for Time Series Forecasting: Methods and Benchmarking"**
-  (arXiv 2601.18509, Jan 2026) — an explicit benchmark, but scoped narrowly: AutoARIMA as the sole
-  base forecaster, neural predictors deliberately excluded, evaluated on a monthly sales corpus
-  with coverage / width / Winkler score. Reports that multi-step split CP is the most efficient
-  method reaching 90%. **[web]**
+**Stocker, Małgorzewicz, Fontana & Ben Taieb, "A Gentle Introduction to Conformal Time Series
+Forecasting" (arXiv 2511.13608, Nov 2025)** is by this repository's owner. It is therefore the
+*predecessor*, not a competitor, and the testbed should be built as its empirical engine. Working
+assumption for everything below: the new review is a successor to it, with a substantially larger
+empirical component. If instead it is a differently-scoped piece, §7.2's differentiators still
+hold but the continuity requirements in this subsection do not.
 
-Both were unreachable from this sandbox, so read them directly before finalising scope.
+Three consequences for the design:
 
-The differentiators available to this testbed, given what those two do not do:
+1. **Reuse the prior taxonomy and notation verbatim.** The three-way split (reweighting
+   calibration data / dynamically updating residual distributions / adaptively tuning target
+   coverage) should organise the results tables, so the two papers read as one line of work. §1
+   above maps the implementation families onto it.
+2. **Reuse the validity–efficiency–compute triad as the metric organising principle.** The prior
+   review already frames the comparison that way; §4 of the plan should be presented under those
+   three headings rather than as a flat metric list, with the new time-series-specific diagnostics
+   (rolling coverage, miscoverage run-length, adaptivity correlation) slotted under *validity* and
+   *efficiency* respectively.
+3. **The obvious extension is scale and realism.** The prior review's empirical section is a
+   *controlled* comparison. This testbed's contribution is to take the same comparison to a large
+   real-data factorial design with repetition and rank-based significance testing — which is
+   precisely what this repository's runner and CD-diagram stack were built for.
 
-1. **Score × scheme as a full cross-product.** Both existing works fix a score and vary the scheme.
-   The whole point of inheriting this repository's design is that the score is a free axis, so you
-   can answer "how much of the improvement attributed to method X is actually the score it happens
-   to use?" — a question the literature currently cannot answer.
-2. **Base-forecaster breadth.** The Jan-2026 benchmark explicitly excludes neural predictors; here
-   naive → ARIMA → LGBM → quantile-LSTM → MDN → MQF2 is a declared axis.
-3. **Non-convex prediction sets.** Density-based scores (`C-HDR`, `DR-CP`, `PCP`) yield unions of
+### 7.2 The genuinely new empirical contributions
+
+Beyond scaling up, six things the prior review and the competing benchmark both leave open:
+
+1. **Empirically stress-test the paper's own theory.** The prior review derives finite-sample
+   split-CP coverage guarantees under *checkable* weak-dependence conditions. The testbed can
+   estimate those dependence coefficients on each real dataset and ask whether the bound is
+   predictive of the realised coverage loss — i.e. whether the conditions are tight, conservative,
+   or violated in practice. This is the strongest available follow-up: it converts a theoretical
+   contribution into a measurement, and no other group is positioned to do it. Worth designing the
+   synthetic generators in §3 partly around known mixing coefficients so the bound can be checked
+   where the truth is available.
+2. **Score × scheme as a full cross-product.** Both existing works fix a score and vary the
+   scheme. Inheriting this repository's design makes the score a free axis, so the study can
+   answer "how much of the improvement attributed to method X is actually the score it happens to
+   use?" — currently unanswerable from the literature.
+3. **Base-forecaster breadth.** The competing benchmark (§7.3) explicitly excludes neural
+   predictors; here naive → ARIMA → LGBM → quantile-LSTM → MDN → MQF2 is a declared axis.
+4. **Non-convex prediction sets.** Density-based scores (`C-HDR`, `DR-CP`, `PCP`) yield unions of
    intervals in 1-D. No time-series benchmark evaluates these, and the exact grid-based measure in
    §4.1 of the plan makes them measurable.
-4. **Miscoverage-dependence diagnostics.** Run-length and independence tests on the miscoverage
-   sequence — the property split CP loses first and that almost no paper reports.
-5. **Oracle conditional coverage** on the synthetic group.
-6. **Reproduction of published results as a validation layer** (§4), rather than a fresh set of
-   numbers with no tie-in to the literature.
+5. **Miscoverage-dependence diagnostics.** Run-length and independence tests on the miscoverage
+   sequence — the property split CP loses first, and the one most directly connected to the
+   weak-dependence theory.
+6. **Oracle conditional coverage** on the synthetic group, plus **reproduction of published results
+   as a validation layer** (§4) rather than a fresh set of numbers with no tie-in.
+
+### 7.3 The actual competitor
+
+**"Conformal Prediction Algorithms for Time Series Forecasting: Methods and Benchmarking"**
+(arXiv 2601.18509, Jan 2026) — an explicit benchmark, scoped narrowly: AutoARIMA as the sole base
+forecaster, neural predictors deliberately excluded, evaluated on a monthly sales corpus with
+coverage / width / Winkler score. Reports that multi-step split CP reaches 90% coverage with the
+best efficiency. **[web]** Unreachable from this sandbox — read it directly before finalising
+scope. Its narrowness on both the model and the score axis is what leaves items 2–4 above open.
 
 ---
 
