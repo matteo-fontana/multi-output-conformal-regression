@@ -6,6 +6,10 @@ Series Forecasting* (arXiv 2511.13608). Its taxonomy, notation and validity–ef
 framing are treated as fixed inputs here rather than choices to be re-made; see §7.1 of the
 companion survey.
 
+> **Status.** Phases 0–4 of §7 are implemented and tested (`python -m pytest
+> tests/test_ts_conformal.py`). See the *Time-series testbed* section of the README for usage.
+> Deviations from this plan that survived contact with the code are recorded in §10.
+
 Companion document: **`TIMESERIES_METHODS_AND_DATASETS.md`** — survey of the method families, the
 datasets each paper benchmarks on (verified against the authors' released code), the proposed
 dataset roster, and how this study positions against the two existing 2025–26 reviews/benchmarks.
@@ -455,3 +459,68 @@ The honest caveat: this framework's central assumption is exchangeability, and t
 the new study is that it fails. Everything in §0's "breaks" table is a place where that assumption
 is baked into code that looks generic. The rewrite is genuinely mechanical, but it must be done
 deliberately rather than by inheriting from `BaseDataModule` and hoping.
+
+---
+
+## 10. What was actually built, and where it departs from this plan
+
+Phases 0–4 are implemented; 53 tests pass. This section records the deviations, so the plan and
+the code do not drift apart silently.
+
+### Design changes made during implementation
+
+1. **`TimeSeriesDataModule` does not subclass `BaseDataModule`.** §2.1 proposed subclassing. In
+   practice the parent's substance is `random_split` plus DataLoader plumbing — the first is
+   exactly what must not happen here, and the second buys nothing for a conformal core that is
+   vectorised numpy. The datamodule is therefore standalone and torch-free. What is reused from
+   the architecture is everything *above* it: `RunConfig`, the runner, the `HP`/`Join`/`Union`
+   DSL, and the analysis stack.
+2. **A separate `TSEvaluator` rather than an extended `MetricsComputer`.** §4 assumed the existing
+   metrics computer could be made to work for all three `output_type`s. It was cleaner to write a
+   dedicated driver: the multi-output one is organised around Monte-Carlo region volume and a
+   fixed `q`, and the time-series one needs an exact 1-D grid measure and a `q_t` stream.
+3. **The score/threshold decoupling of §3.2 is the load-bearing decision** and survived intact.
+   Adding a scheme to a sweep costs milliseconds because the score pass is cached per
+   `(model, score)`; a test asserts this (`test_score_pass_is_cached_across_schemes`).
+4. **Two upstream files were changed** to keep the time-series path from requiring the multi-output
+   dependency stack: `moc/models/__init__.py` and `moc/datamodules/__init__.py` now resolve their
+   registries lazily, so `cpflows`, `rpy2`/`drf` and `torchvision` are needed only by the models
+   that use them. Behaviour for existing callers is unchanged.
+
+### Implemented
+
+- 11 synthetic generators with exact conditional laws, and 25 vendored real series across four
+  groups (`scripts/fetch_ts_data.py`).
+- 8 scores, 11 schemes, 9 base models, and the full compatibility-filtered cross-product.
+- The metric suite of §4 under validity / efficiency / compute, including exact set measure with
+  connected-component counts, miscoverage run-length and runs test, adaptivity correlations,
+  regret, changepoint response, and oracle conditional coverage.
+- Score-stream dependence diagnostics (ACF, fitted geometric decay, Ljung–Box).
+
+### Not implemented, and why
+
+- **Horizon > 1.** `make_windows` raises rather than silently doing something wrong. This is
+  Phase 6, and it is where `CopulaCPTS`, `CF-RNN` and the `sun` dataset group come in.
+- **Refit protocols.** Only `fit_once` exists; `refit_every_k` / `expanding` / `sliding` are
+  declared in §5 as a first-class axis but not yet wired. The cache would need keying by refit
+  epoch, as §3.2 anticipates.
+- **ARIMA/ETS, LSTM/GRU, and reuse of the repo's `QuantileModule` / `MixtureLightningModule` /
+  `MQF2`.** The model roster covers point, quantile and distribution output types with
+  numpy/sklearn/LightGBM predictors, which is enough to exercise every score. Adding the deep and
+  statistical baselines is additive: implement `fit`/`predict`/`output_type` and register.
+- **AgACI, MVP, EnCQR, HopCPT, blocked/randomisation CP.** The scheme registry covers the ACI,
+  OGD/coin-betting, PID, weighted and ensemble families; these five are the remaining entries from
+  the survey's §1.
+- **The `gibbs`, `auer`, `bhatnagar` and `sun` dataset groups.** Registered in the survey but not
+  vendored: NSRDB beyond the EnbPI extracts needs an API key, LamaH-CE streamflow needs
+  `neuralhydrology`, M4/NN5 come through Merlion, and the CopulaCPTS series are multi-horizon.
+- **The weak-dependence bound comparison itself.** The diagnostics that feed it are in place
+  (`dependence_diagnostics`, `true_mixing_rate`), but computing the finite-sample bound from the
+  prior review and plotting realised coverage loss against it is the next piece of analysis work,
+  not testbed plumbing.
+
+### Reproduction gate (§7, Phase 4b) — not yet run
+
+The SPCI-vs-EnbPI width comparison on ELEC2 and the AgACI learning-rate sweep are the two cheap
+published results this testbed should match before its novel cells are trusted. Both are now
+runnable; neither has been run.

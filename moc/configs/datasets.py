@@ -1,4 +1,5 @@
 from moc.utils.general import filter_dict
+from moc.configs.ts_datasets import get_ts_dataset_groups, is_ts_key
 
 
 camehl_datasets = [
@@ -119,6 +120,8 @@ filtered_datasets = {
 }
 
 def get_dataset_groups(key):
+    if is_ts_key(key):
+        return get_ts_dataset_groups(key)
     if key == 'default':
         key = 'filtered'
     if key == 'all':

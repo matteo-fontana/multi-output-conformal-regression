@@ -1,0 +1,9 @@
+source: NSRDB Atlanta (33.76, -84.39), hourly 2018
+freq: 1h
+seasonal_period: 24
+vendored_from: hamrel-cxu/EnbPI
+commit: 60cd5b7530eb954b02ae94da967111f5b5c3c01b
+licence: MIT
+used_by:
+- EnbPI (Xu & Xie 2021)
+- SPCI (Xu & Xie 2023)

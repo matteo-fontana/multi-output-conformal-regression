@@ -1,0 +1,8 @@
+source: 4-week-ahead COVID death forecasting, AK
+freq: 1W
+seasonal_period: 1
+vendored_from: aangelopoulos/conformal-time-series
+commit: b729c3f5ff633bfc43f0f7ca08199b549c2573ac
+licence: MIT
+used_by:
+- Conformal PID (Angelopoulos et al. 2023)

@@ -1,0 +1,8 @@
+source: French electricity spot prices 2016-2019, built from eco2mix
+vendored_from: mzaffran/AdaptiveConformalPredictionsTimeSeries
+commit: 131656fe4c25251bad745f52db3c2d7cb1c24bbb
+licence: MIT
+used_by:
+- AgACI (Zaffran et al. 2022)
+freq: 1h
+seasonal_period: 24

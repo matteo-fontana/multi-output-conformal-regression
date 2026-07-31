@@ -1,0 +1,8 @@
+source: NSRDB Santa Clara 2018, hourly
+freq: 1h
+seasonal_period: 24
+used_by:
+- EnbPI (TPAMI version)
+vendored_from: hamrel-cxu/EnbPI
+commit: 60cd5b7530eb954b02ae94da967111f5b5c3c01b
+licence: MIT

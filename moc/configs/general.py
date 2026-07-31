@@ -28,10 +28,36 @@ def get_log_dir(config):
     return log_dir
 
 
+def ts_defaults():
+    """Configuration for the time-series testbed.
+
+    `alpha` is overridden to 0.1 by `run_ts.py`: that is the convention across the conformal
+    time-series literature, and matching it keeps the numbers comparable without rescaling.
+    """
+    return dict(
+        horizon=1,
+        lags=24,
+        # Contiguous chronological blocks: train | gap | val | gap | calib | gap | test.
+        split_ratio=(0.5, 0.1, 0.2, 0.2),
+        min_block_size=60,
+        max_calib_size=2048,
+        max_length=8000,
+        synthetic_length=6000,
+        # Exact set measure: number of points in the 1-D evaluation grid.
+        grid_size=2000,
+        local_coverage_windows=(50, 100, 250),
+        wsc_directions=100,
+        # SPCI and the scorecaster train models inside the online loop; off by default so that a
+        # full sweep stays affordable.
+        allow_sequential_model_methods=False,
+    )
+
+
 def general_config(config):
     work_dir = Path('.').resolve()
     default_config = OmegaConf.create(
         dict(
+            ts=ts_defaults(),
             work_dir=str(work_dir),
             data_dir=str(work_dir / 'data'),
             log_base_dir=str(work_dir / 'logs'),

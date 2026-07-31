@@ -46,6 +46,14 @@ def train(rc, datamodule):
 
 
 def run(rc, process_index):
+    # The time-series testbed has its own driver: its splits, scores and calibration schemes share
+    # no code with the multi-output path below, only the runner and the analysis stack above it.
+    from moc.configs.ts_datasets import is_ts_group
+
+    if is_ts_group(rc.dataset_group):
+        from moc.models.ts_train import run as ts_run
+        return ts_run(rc, process_index)
+
     log.info(f'Starting {rc.summary_str()}')
     datamodule_cls = get_datamodule(rc.dataset_group)
     datamodule = datamodule_cls(
