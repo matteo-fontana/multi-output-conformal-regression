@@ -2,6 +2,10 @@
 
 Target: an empirical companion to a review paper on conformal prediction for time series.
 
+Companion document: **`TIMESERIES_METHODS_AND_DATASETS.md`** — survey of the method families, the
+datasets each paper benchmarks on (verified against the authors' released code), the proposed
+dataset roster, and how this study positions against the two existing 2025–26 reviews/benchmarks.
+
 The guiding idea is to keep the paper's organising principle — **a large factorial study over
 (base predictor) × (conformity score) × (calibration scheme) × (dataset), repeated, ranked and
 CD-diagrammed** — and change only what the i.i.d. assumption forces us to change.
@@ -122,13 +126,27 @@ for a review paper.
 - Heavy-tailed (Student-t) innovations — stresses width metrics.
 - Non-stationary "adversarial" sequence à la Gibbs–Candès — worst case for exchangeability.
 
-**Real:** ELEC2, UCI electricity load, traffic, ETTh1/ETTm1/ETTm2, solar, weather, Nordpool spot
-prices, a stock realised-volatility series, COVID case counts (used by EnbPI/CF-RNN), and an M4
-hourly/daily subset for breadth. Suggested `data/timeseries/<group>/<name>.csv` with a
-`meta.yaml` recording frequency, seasonality period, and target column.
+**Real:** take the roster from the literature rather than inventing one, so every method can be
+compared on its own published benchmark as well as on neutral ground. The verified per-paper
+dataset inventory, the proposed groups, and acquisition/licensing notes are in
+**`TIMESERIES_METHODS_AND_DATASETS.md`**. Summary: eight groups named after first authors in this
+repo's existing convention — `elec2`, `xu` (EnbPI's solar/wind/appliances/greenhouse/Beijing air),
+`angelopoulos` (Conformal PID's climate/stocks/COVID-deaths), `zaffran` (AgACI's AR simulations),
+`auer` (HopCPT's air-quality and solar), `bhatnagar` (M4 + NN5), `gibbs` (volatility), `sun`
+(CopulaCPTS, horizon > 1 only) — plus `ts_synthetic`. ELEC2 and NSRDB solar are the anchors: they
+recur across otherwise disjoint communities, so nearly every method has a published number on one
+of them.
+
+Storage: `data/timeseries/<group>/<name>.csv` with a `meta.yaml` per series recording frequency,
+seasonal period, target and exogenous columns, transform, upstream URL and licence. Most of the
+data is vendorable directly from the authors' MIT-licensed repos — see §5 of the survey.
 
 Keep the group→list structure of `moc/configs/datasets.py` (`get_dataset_groups`) verbatim, with
 new keys `ts_synthetic`, `ts_real`, `ts_filtered`, `ts_test`.
+
+**Adopt the field's conventions** so numbers are comparable without rescaling: `alpha = 0.1` (not
+this repo's current 0.2), an explicit burn-in excluded from all metrics, and seasonal periods per
+dataset (48 for ELEC2, 24 for hourly solar/air, 5 for daily stocks, 7 for daily climate).
 
 ### 2.3 Replication: rolling origin instead of random re-splits
 
@@ -209,7 +227,13 @@ paper's Table 1 in structure.
 | EnbPI, EnCQR | Xu & Xie 2021; Jensen et al. 2022 |
 | SPCI | Xu & Xie 2023 |
 | HopCPT (optional, heavier) | Auer et al. 2023 |
-| CF-RNN (Bonferroni), CopulaCPTS | Stankevičiūtė et al. 2021; Sun & Yu 2023 — horizon axis only |
+| CF-RNN (Bonferroni), CopulaCPTS | Stankevičiūtė et al. 2021; Sun & Yu 2024 — horizon axis only |
+| TQA / CPTD | Lin, Trivedi & Sun 2022 — panel/longitudinal coverage |
+
+See `TIMESERIES_METHODS_AND_DATASETS.md` §1 for the full taxonomy, what each method actually
+adapts (calibration weights vs. threshold vs. residual law vs. horizon), and links to the
+reference implementations — several of which (`salesforce/online_conformal`) ship independent
+implementations of split CP, NexCP and FACI that are useful for cross-checking ours.
 
 Two shared primitives to add next to `conformal_quantile`:
 
@@ -341,6 +365,11 @@ single score with a single scheme; filling in this grid is the empirical contrib
 
 ## 7. Phasing
 
+**Phase 0 — data acquisition (~0.5 day).** `scripts/fetch_ts_data.py`: shallow-clone the source
+repos, copy the vendorable series into `data/timeseries/<group>/`, write `meta.yaml` per series,
+and record upstream commit SHAs (several of these repos have re-uploaded their data files). This
+is cheap and unblocks everything else; see §5 of the survey.
+
 **Phase 1 — minimum viable testbed (~2–3 days).** `TimeSeriesDataModule` with chronological
 splits + windowing; 3 synthetic + 2 real datasets; naive/ridge/LightGBM models; absolute-residual
 and CQR scores; Split + Rolling + ACI schemes; coverage / rolling coverage / mean width metrics;
@@ -356,6 +385,11 @@ component counting.
 
 **Phase 4 — metric depth (~2 days).** Winkler, pinball, run-length/independence tests, adaptivity
 correlation, regret, changepoint response, oracle conditional coverage on synthetic data.
+
+**Phase 4b — reproduction gate (~1 day).** Before generating any novel number, reproduce two
+published results: the SPCI-vs-EnbPI interval-width reduction on ELEC2 (the SPCI repo ships this
+exact comparison as a notebook) and the AgACI AR(1) φ = 0.9 learning-rate sweep. Both are cheap
+and both have numbers to check against. See §4 of the survey for the full reproduction matrix.
 
 **Phase 5 — scale-out and analysis (~2–3 days).** Full dataset roster, rolling-origin replication,
 CD diagrams, per-dataset tables, coverage-over-time figures. Reuse `plot_cd_diagram.py` unchanged.
