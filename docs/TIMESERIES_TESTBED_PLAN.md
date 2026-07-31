@@ -519,8 +519,30 @@ the code do not drift apart silently.
   prior review and plotting realised coverage loss against it is the next piece of analysis work,
   not testbed plumbing.
 
-### Reproduction gate (§7, Phase 4b) — not yet run
+### Reproduction gate (§7, Phase 4b) — run, both checks pass
 
-The SPCI-vs-EnbPI width comparison on ELEC2 and the AgACI learning-rate sweep are the two cheap
-published results this testbed should match before its novel cells are trusted. Both are now
-runnable; neither has been run.
+`python scripts/reproduce_published.py` checks the testbed against two published results before
+its novel cells are trusted.
+
+**SPCI vs EnbPI on ELEC2** (Xu & Xie 2023). Base model is the bootstrap ensemble in both arms, so
+the only difference is the calibration scheme:
+
+| method | coverage | width | Winkler | LCE(100) | update time |
+|---|---|---|---|---|---|
+| EnbPI (ensemble + `Rolling`) | 0.899 | 0.0578 | 0.0783 | 0.031 | 0.01 s |
+| SPCI (ensemble + quantile forest) | 0.903 | 0.0539 | 0.0682 | 0.029 | 17.0 s |
+| Split (control) | 0.935 | 0.0672 | 0.0790 | 0.046 | 0.00 s |
+
+SPCI is **6.9% narrower at matched (slightly higher) coverage**, reproducing the published
+direction, and pays for it with three orders of magnitude more update time — the cost axis the
+original comparison does not report. Static split conformal over-covers by 3.5 points, which is the
+control behaving as the theory says it should.
+
+**ACI's learning-rate sensitivity** on AgACI's AR(1) with φ = 0.9 (Zaffran et al. 2022). Sweeping
+γ over [0.0005, 0.5] moves the mean width by **241% of its mean** while marginal coverage stays
+pinned near 0.89–0.90 — precisely the "coverage is not the problem, γ is" motivation for
+aggregating over learning rates. DtACI lands at 3.29, the narrow end of the range, without being
+told the right γ.
+
+Both checks assert their published *direction* rather than exact numbers, since the base
+predictors and splits differ from the originals.
