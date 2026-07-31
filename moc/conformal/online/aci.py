@@ -41,8 +41,9 @@ class ACI(OnlineConformalizer, HistoryMixin):
         n_test = len(s_test)
         out = np.empty(n_test)
         alpha_t = alpha
+        full, n_calib = self.full_stream(s_calib, s_test)
         for t in range(n_test):
-            hist = self.history_view(s_calib, s_test, t, self.window)
+            hist = self.history_view(full, n_calib, t, self.window)
             if alpha_t <= 0:
                 q = np.inf
                 self.n_infinite += 1
@@ -90,8 +91,9 @@ class DtACI(OnlineConformalizer, HistoryMixin):
         sigma = 1.0 / (2 * self.interval)
 
         out = np.empty(len(s_test))
+        full, n_calib = self.full_stream(s_calib, s_test)
         for t in range(len(s_test)):
-            hist = self.history_view(s_calib, s_test, t, self.window)
+            hist = self.history_view(full, n_calib, t, self.window)
             p = np.exp(log_w - logsumexp(log_w))
             alpha_bar = float(np.dot(p, alphas))
             out[t] = conformal_quantile(hist, np.clip(alpha_bar, 0.0, 1.0))

@@ -103,15 +103,20 @@ class OnlineConformalizer:
 
 
 class HistoryMixin:
-    """Helper for schemes whose threshold is a quantile over a growing or sliding history."""
+    """Helper for schemes whose threshold is a quantile over a growing or sliding history.
+
+    The stream is concatenated once and then sliced; rebuilding it at every step would make the
+    whole recursion quadratic, which matters because these schemes are run once per (score,
+    scheme) cell of the cross-product.
+    """
 
     @staticmethod
-    def history_view(s_calib, s_test, t, window):
-        """Scores observable strictly before test index `t`."""
-        if t == 0:
-            hist = s_calib
-        else:
-            hist = np.concatenate([s_calib, s_test[:t]])
-        if window is not None and window > 0 and len(hist) > window:
-            hist = hist[-window:]
-        return hist
+    def full_stream(s_calib, s_test):
+        return np.concatenate([s_calib, s_test]), len(s_calib)
+
+    @staticmethod
+    def history_view(full, n_calib, t, window):
+        """A view of the scores observable strictly before test index `t`."""
+        end = n_calib + t
+        lo = max(0, end - window) if window else 0
+        return full[lo:end]

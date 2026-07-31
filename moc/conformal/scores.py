@@ -49,9 +49,10 @@ class ScoreFunction:
         self.pred_calib, self.pred_test = pred_calib, pred_test
         self.n_calib, self.n_test = len(y_calib), len(y_test)
         self._setup(pred_calib, y_calib, pred_test, y_test)
-        s_calib = np.atleast_2d(self._values(pred_calib, y_calib, offset=0).T).T
-        s_test = np.atleast_2d(self._values(pred_test, y_test, offset=self.n_calib).T).T
-        return s_calib.reshape(self.n_calib, self.n_streams), s_test.reshape(self.n_test, self.n_streams)
+        s_calib = self._values(pred_calib, y_calib, offset=0)
+        s_test = self._values(pred_test, y_test, offset=self.n_calib)
+        return (s_calib.reshape(self.n_calib, self.n_streams),
+                s_test.reshape(self.n_test, self.n_streams))
 
     def _setup(self, pred_calib, y_calib, pred_test, y_test):
         """Hook for scores that need causal auxiliary statistics over the calib+test stream."""
